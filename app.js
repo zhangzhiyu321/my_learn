@@ -17,8 +17,8 @@ let isSelecting = false;
 let selectStart = null;
 let selectionRect;
 
-const xAxisG = svg.append('g').attr('transform', `translate(0,${height - 30})`);
-const yAxisG = svg.append('g').attr('transform', 'translate(40,0)');
+let xAxisG = svg.append('g').attr('transform', `translate(0,${height - 30})`);
+let yAxisG = svg.append('g').attr('transform', 'translate(40,0)');
 
 function drawAxes() {
     xAxisG.call(d3.axisBottom(xScale));
@@ -164,6 +164,25 @@ function rotateSelected() {
     render();
 }
 
+function sampleSegment() {
+    const selected = points.filter(p => p.selected);
+    if (selected.length !== 2) {
+        alert('Select exactly two points');
+        return;
+    }
+    const count = parseInt(document.getElementById('sampleNum').value, 10);
+    if (!count || count <= 0) return;
+    const [p1, p2] = selected;
+    pushState();
+    for (let i = 1; i <= count; i++) {
+        const t = i / (count + 1);
+        const x = p1.x * (1 - t) + p2.x * t;
+        const y = p1.y * (1 - t) + p2.y * t;
+        points.push({ id: nextId++, x, y });
+    }
+    render();
+}
+
 function undo() {
     if (undoStack.length === 0) return;
     redoStack.push(JSON.stringify(points));
@@ -238,7 +257,6 @@ d3.select('#applyRange').on('click', () => {
     xScale.domain([xmin, xmax]);
     yScale.domain([ymin, ymax]);
 
-    svg.selectAll('*').remove();
     drawAxes();
     render();
 });
@@ -260,7 +278,8 @@ d3.select('#exportData').on('click', () => {
 d3.select('#clearPlot').on('click', () => {
     pushState();
     points = [];
-    svg.selectAll('*').remove();
+    svg.selectAll('circle.point').remove();
+    svg.selectAll('path.curve').remove();
     drawAxes();
     render();
 });
@@ -294,7 +313,8 @@ document.getElementById('importData').addEventListener('change', event => {
             document.getElementById('ymin').value = yScale.domain()[0];
             document.getElementById('ymax').value = yScale.domain()[1];
         }
-        svg.selectAll('*').remove();
+        svg.selectAll('circle.point').remove();
+        svg.selectAll('path.curve').remove();
         drawAxes();
         render();
         event.target.value = '';
@@ -306,6 +326,7 @@ d3.select('#copyPoints').on('click', copySelected);
 d3.select('#pastePoints').on('click', pasteFromClipboard);
 
 d3.select('#rotatePoints').on('click', rotateSelected);
+d3.select('#sampleSegment').on('click', sampleSegment);
 d3.select('#toggleLine').on('click', () => { showLine = !showLine; render(); });
 
 d3.select('#undoBtn').on('click', undo);
