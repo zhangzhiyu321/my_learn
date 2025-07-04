@@ -165,10 +165,14 @@ function rotateSelected() {
 }
 
 function sampleSegment() {
-    const selected = points.filter(p => p.selected);
+    let selected = points.filter(p => p.selected);
     if (selected.length < 2) {
-        alert('Select at least two points');
-        return;
+        if (points.length < 2) {
+            alert('Need at least two points to sample');
+            return;
+        }
+        // fallback: use all points when not enough are selected
+        selected = points.slice();
     }
     const count = parseInt(document.getElementById('sampleNum').value, 10);
     if (!count || count <= 0) return;
