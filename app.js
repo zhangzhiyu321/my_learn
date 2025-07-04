@@ -16,6 +16,8 @@ let showLine = true;
 let isSelecting = false;
 let selectStart = null;
 let selectionRect;
+let justSelected = false;
+let clipboardData = '';
 
 let xAxisG = svg.append('g').attr('transform', `translate(0,${height - 30})`);
 let yAxisG = svg.append('g').attr('transform', 'translate(40,0)');
@@ -41,13 +43,15 @@ function render() {
             .attr('cy', yScale(p.y))
             .attr('r', 4)
             .attr('fill', 'steelblue')
-            .call(d3.drag()
-                .on('start', () => { pushState(); })
-                .on('drag', (event, d) => {
-                    d.x = xScale.invert(event.x);
-                    d.y = yScale.invert(event.y);
-                    render();
-                })
+            .call(
+                d3.drag()
+                    .subject(d => ({ x: xScale(d.x), y: yScale(d.y) }))
+                    .on('start', () => { pushState(); })
+                    .on('drag', (event, d) => {
+                        d.x = xScale.invert(event.x);
+                        d.y = yScale.invert(event.y);
+                        render();
+                    })
             )
             .on('click', (event, d) => {
                 if (!event.shiftKey) points.forEach(p => p.selected = false);
@@ -118,11 +122,14 @@ function copyToClipboard() {
     const selected = points.filter(p => p.selected);
     if (!selected.length) return;
     const text = selected.map(p => `${p.x}\t${p.y}`).join('\n');
-    navigator.clipboard.writeText(text).catch(() => {});
+    clipboardData = text;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(() => {});
+    }
 }
 
 function pasteFromClipboard() {
-    navigator.clipboard.readText().then(text => {
+    const handleText = text => {
         if (!text) return;
         pushState();
         text.trim().split(/\r?\n/).forEach(line => {
@@ -136,7 +143,15 @@ function pasteFromClipboard() {
             }
         });
         render();
-    }).catch(() => {});
+    };
+
+    if (navigator.clipboard && navigator.clipboard.readText) {
+        navigator.clipboard.readText()
+            .then(text => { handleText(text); })
+            .catch(() => { handleText(clipboardData); });
+    } else {
+        handleText(clipboardData);
+    }
 }
 
 function rotateSelected() {
@@ -218,6 +233,7 @@ svg.on('mousedown', function(event) {
         .attr('y', selectStart[1])
         .attr('width', 0)
         .attr('height', 0);
+    justSelected = false;
 });
 
 svg.on('mousemove', function(event) {
@@ -245,11 +261,13 @@ svg.on('mouseup', function(event) {
     });
     selectionRect.remove();
     isSelecting = false;
+    justSelected = true;
     render();
 });
 
 svg.on('click', function(event) {
     if (isSelecting || event.target.tagName === 'circle') return;
+    if (justSelected) { justSelected = false; return; }
     const [mx, my] = d3.pointer(event);
     const x = xScale.invert(mx);
     const y = yScale.invert(my);
@@ -341,7 +359,8 @@ d3.select('#undoBtn').on('click', undo);
 d3.select('#redoBtn').on('click', redo);
 
 document.addEventListener('keydown', e => {
-    if (e.key === 'Delete') {
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
         deleteSelected();
     }
     const step = e.shiftKey ? 0.1 : 0.01;
