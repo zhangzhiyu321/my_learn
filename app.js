@@ -2,6 +2,9 @@ const svg = d3.select('#plot');
 const width = +svg.attr('width');
 const height = +svg.attr('height');
 
+// clear any stored data on load so each refresh starts fresh
+localStorage.removeItem('curve_points');
+
 let xScale = d3.scaleLinear().domain([0, 10]).range([40, width - 20]);
 let yScale = d3.scaleLinear().domain([0, 10]).range([height - 30, 20]);
 
@@ -9,6 +12,10 @@ let points = [];
 let nextId = 1;
 let undoStack = [];
 let redoStack = [];
+let showLine = true;
+let isSelecting = false;
+let selectStart = null;
+let selectionRect;
 
 const xAxisG = svg.append('g').attr('transform', `translate(0,${height - 30})`);
 const yAxisG = svg.append('g').attr('transform', 'translate(40,0)');
@@ -19,22 +26,17 @@ function drawAxes() {
 }
 
 function saveLocal() {
-    localStorage.setItem('curve_points', JSON.stringify(points));
+    // automatic persistence disabled
 }
 
 function pushState() {
     undoStack.push(JSON.stringify(points));
     if (undoStack.length > 100) undoStack.shift();
     redoStack = [];
-    saveLocal();
 }
 
 function loadLocal() {
-    const stored = localStorage.getItem('curve_points');
-    if (stored) {
-        points = JSON.parse(stored);
-        if (points.length) nextId = Math.max(...points.map(p => p.id || 0)) + 1;
-    }
+    // intentionally left blank
 }
 
 function render() {
@@ -54,7 +56,6 @@ function render() {
                     d.y = yScale.invert(event.y);
                     render();
                 })
-                .on('end', saveLocal)
             )
             .on('click', (event, d) => {
                 if (!event.shiftKey) points.forEach(p => p.selected = false);
@@ -63,7 +64,7 @@ function render() {
             });
     });
 
-    if (points.length > 1) {
+    if (showLine && points.length > 1) {
         const line = d3.line()
             .x(d => xScale(d.x))
             .y(d => yScale(d.y))
@@ -121,6 +122,31 @@ function copySelected() {
     render();
 }
 
+function copyToClipboard() {
+    const selected = points.filter(p => p.selected);
+    if (!selected.length) return;
+    const text = selected.map(p => `${p.x}\t${p.y}`).join('\n');
+    navigator.clipboard.writeText(text).catch(() => {});
+}
+
+function pasteFromClipboard() {
+    navigator.clipboard.readText().then(text => {
+        if (!text) return;
+        pushState();
+        text.trim().split(/\r?\n/).forEach(line => {
+            line = line.trim();
+            if (!line) return;
+            const parts = line.split(/\s+/);
+            if (parts.length >= 2) {
+                const x = parseFloat(parts[0]);
+                const y = parseFloat(parts[1]);
+                if (!isNaN(x) && !isNaN(y)) points.push({id: nextId++, x, y});
+            }
+        });
+        render();
+    }).catch(() => {});
+}
+
 function rotateSelected() {
     const selected = points.filter(p => p.selected);
     if (!selected.length) return;
@@ -143,7 +169,6 @@ function undo() {
     redoStack.push(JSON.stringify(points));
     points = JSON.parse(undoStack.pop());
     render();
-    saveLocal();
 }
 
 function redo() {
@@ -151,15 +176,53 @@ function redo() {
     undoStack.push(JSON.stringify(points));
     points = JSON.parse(redoStack.pop());
     render();
-    saveLocal();
 }
 
 drawAxes();
-loadLocal();
 render();
 
+svg.on('mousedown', function(event) {
+    if (!event.shiftKey || event.target.tagName === 'circle') return;
+    isSelecting = true;
+    selectStart = d3.pointer(event);
+    selectionRect = svg.append('rect')
+        .attr('class', 'marquee')
+        .attr('x', selectStart[0])
+        .attr('y', selectStart[1])
+        .attr('width', 0)
+        .attr('height', 0);
+});
+
+svg.on('mousemove', function(event) {
+    if (!isSelecting) return;
+    const [mx, my] = d3.pointer(event);
+    const x = Math.min(selectStart[0], mx);
+    const y = Math.min(selectStart[1], my);
+    const w = Math.abs(mx - selectStart[0]);
+    const h = Math.abs(my - selectStart[1]);
+    selectionRect.attr('x', x).attr('y', y)
+        .attr('width', w).attr('height', h);
+});
+
+svg.on('mouseup', function(event) {
+    if (!isSelecting) return;
+    const [mx, my] = d3.pointer(event);
+    const x0 = Math.min(selectStart[0], mx);
+    const x1 = Math.max(selectStart[0], mx);
+    const y0 = Math.min(selectStart[1], my);
+    const y1 = Math.max(selectStart[1], my);
+    points.forEach(p => {
+        const px = xScale(p.x);
+        const py = yScale(p.y);
+        if (px >= x0 && px <= x1 && py >= y0 && py <= y1) p.selected = true;
+    });
+    selectionRect.remove();
+    isSelecting = false;
+    render();
+});
+
 svg.on('click', function(event) {
-    if (event.target.tagName === 'circle') return;
+    if (isSelecting || event.target.tagName === 'circle') return;
     const [mx, my] = d3.pointer(event);
     const x = xScale.invert(mx);
     const y = yScale.invert(my);
@@ -240,8 +303,10 @@ document.getElementById('importData').addEventListener('change', event => {
 });
 
 d3.select('#copyPoints').on('click', copySelected);
+d3.select('#pastePoints').on('click', pasteFromClipboard);
 
 d3.select('#rotatePoints').on('click', rotateSelected);
+d3.select('#toggleLine').on('click', () => { showLine = !showLine; render(); });
 
 d3.select('#undoBtn').on('click', undo);
 
@@ -258,5 +323,7 @@ document.addEventListener('keydown', e => {
     if (e.key === 'ArrowDown') moveSelected(0, -step);
     if (e.ctrlKey && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
     if (e.ctrlKey && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); }
+    if (e.ctrlKey && e.key.toLowerCase() === 'c') { e.preventDefault(); copyToClipboard(); }
+    if (e.ctrlKey && e.key.toLowerCase() === 'v') { e.preventDefault(); pasteFromClipboard(); }
 });
 

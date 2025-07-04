@@ -19,3 +19,9 @@ body {
     stroke: orange;
     stroke-width: 2px;
 }
+
+.marquee {
+    fill: rgba(0, 0, 255, 0.1);
+    stroke: blue;
+    stroke-dasharray: 4;
+}
