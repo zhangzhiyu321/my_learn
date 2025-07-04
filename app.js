@@ -72,3 +72,52 @@ d3.select('#exportData').on('click', () => {
     a.click();
     URL.revokeObjectURL(url);
 });
+
+d3.select('#clearPlot').on('click', () => {
+    svg.selectAll('circle').remove();
+    svg.selectAll('path.curve').remove();
+    points = [];
+});
+
+document.getElementById('importData').addEventListener('change', event => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const text = e.target.result;
+        const lines = text.split(/\r?\n/);
+        points = [];
+        lines.forEach(line => {
+            line = line.trim();
+            if (!line || line.startsWith('#')) return;
+            const parts = line.split(/\s+/);
+            if (parts.length >= 2) {
+                const x = parseFloat(parts[0]);
+                const y = parseFloat(parts[1]);
+                if (!isNaN(x) && !isNaN(y)) points.push({x, y});
+            }
+        });
+        if (points.length) {
+            const xs = points.map(p => p.x);
+            const ys = points.map(p => p.y);
+            xScale.domain([Math.min(...xs), Math.max(...xs)]);
+            yScale.domain([Math.min(...ys), Math.max(...ys)]);
+            document.getElementById('xmin').value = xScale.domain()[0];
+            document.getElementById('xmax').value = xScale.domain()[1];
+            document.getElementById('ymin').value = yScale.domain()[0];
+            document.getElementById('ymax').value = yScale.domain()[1];
+            svg.selectAll('circle').remove();
+            svg.selectAll('path.curve').remove();
+            drawAxes();
+            points.forEach(p => {
+                svg.append('circle')
+                   .attr('cx', xScale(p.x))
+                   .attr('cy', yScale(p.y))
+                   .attr('r', 3)
+                   .attr('fill', 'steelblue');
+            });
+        }
+        event.target.value = '';
+    };
+    reader.readAsText(file);
+});
