@@ -1,6 +1,6 @@
 # my_learn
 
-This project demonstrates a small web page that allows you to draw curves by selecting points. You can configure axis ranges, import or export `.dat` files and clear the plot. Points can be moved, deleted, copied or rotated. Rectangle selection, clipboard copy/paste, segment sampling (now supporting multiple points) and a toggle for showing the curve are available. If no points are selected, the segment sampler uses all points. Basic undo/redo operations are supported.
+This project demonstrates a small web page that allows you to draw curves by selecting points. You can configure axis ranges, import or export `.dat` files and clear the plot. Points can be moved, deleted or rotated. Rectangle selection, segment sampling (now supporting multiple points) and a toggle for showing the curve are available. If no points are selected, the segment sampler uses all points. Basic undo/redo operations are supported.
 
 Reloading the page resets all points and settings as no data is stored between sessions.
 

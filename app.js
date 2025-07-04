@@ -17,7 +17,6 @@ let isSelecting = false;
 let selectStart = null;
 let selectionRect;
 let justSelected = false;
-let clipboardData = '';
 
 let xAxisG = svg.append('g').attr('transform', `translate(0,${height - 30})`);
 let yAxisG = svg.append('g').attr('transform', 'translate(40,0)');
@@ -106,53 +105,6 @@ function moveSelected(dx, dy) {
     }
 }
 
-function copySelected() {
-    const selected = points.filter(p => p.selected);
-    if (!selected.length) return;
-    const dx = parseFloat(prompt('Offset X', '0')) || 0;
-    const dy = parseFloat(prompt('Offset Y', '0')) || 0;
-    pushState();
-    selected.forEach(p => {
-        points.push({id: nextId++, x: p.x + dx, y: p.y + dy});
-    });
-    render();
-}
-
-function copyToClipboard() {
-    const selected = points.filter(p => p.selected);
-    if (!selected.length) return;
-    const text = selected.map(p => `${p.x}\t${p.y}`).join('\n');
-    clipboardData = text;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).catch(() => {});
-    }
-}
-
-function pasteFromClipboard() {
-    const handleText = text => {
-        if (!text) return;
-        pushState();
-        text.trim().split(/\r?\n/).forEach(line => {
-            line = line.trim();
-            if (!line) return;
-            const parts = line.split(/\s+/);
-            if (parts.length >= 2) {
-                const x = parseFloat(parts[0]);
-                const y = parseFloat(parts[1]);
-                if (!isNaN(x) && !isNaN(y)) points.push({id: nextId++, x, y});
-            }
-        });
-        render();
-    };
-
-    if (navigator.clipboard && navigator.clipboard.readText) {
-        navigator.clipboard.readText()
-            .then(text => { handleText(text); })
-            .catch(() => { handleText(clipboardData); });
-    } else {
-        handleText(clipboardData);
-    }
-}
 
 function rotateSelected() {
     const selected = points.filter(p => p.selected);
@@ -347,8 +299,6 @@ document.getElementById('importData').addEventListener('change', event => {
     reader.readAsText(file);
 });
 
-d3.select('#copyPoints').on('click', copySelected);
-d3.select('#pastePoints').on('click', pasteFromClipboard);
 
 d3.select('#rotatePoints').on('click', rotateSelected);
 d3.select('#sampleSegment').on('click', sampleSegment);
@@ -370,7 +320,5 @@ document.addEventListener('keydown', e => {
     if (e.key === 'ArrowDown') moveSelected(0, -step);
     if (e.ctrlKey && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
     if (e.ctrlKey && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); }
-    if (e.ctrlKey && e.key.toLowerCase() === 'c') { e.preventDefault(); copyToClipboard(); }
-    if (e.ctrlKey && e.key.toLowerCase() === 'v') { e.preventDefault(); pasteFromClipboard(); }
 });
 
