@@ -166,20 +166,32 @@ function rotateSelected() {
 
 function sampleSegment() {
     const selected = points.filter(p => p.selected);
-    if (selected.length !== 2) {
-        alert('Select exactly two points');
+    if (selected.length < 2) {
+        alert('Select at least two points');
         return;
     }
     const count = parseInt(document.getElementById('sampleNum').value, 10);
     if (!count || count <= 0) return;
-    const [p1, p2] = selected;
+
+    const sorted = selected.slice().sort((a, b) => a.x - b.x);
+    const line = d3.line()
+        .x(d => xScale(d.x))
+        .y(d => yScale(d.y))
+        .curve(d3.curveMonotoneX);
+
+    const pathData = line(sorted);
+    const tempPath = svg.append('path').attr('d', pathData).attr('fill', 'none').attr('stroke', 'none');
+    const pathNode = tempPath.node();
+    const total = pathNode.getTotalLength();
+
     pushState();
     for (let i = 1; i <= count; i++) {
-        const t = i / (count + 1);
-        const x = p1.x * (1 - t) + p2.x * t;
-        const y = p1.y * (1 - t) + p2.y * t;
+        const pos = pathNode.getPointAtLength((i / (count + 1)) * total);
+        const x = xScale.invert(pos.x);
+        const y = yScale.invert(pos.y);
         points.push({ id: nextId++, x, y });
     }
+    tempPath.remove();
     render();
 }
 
