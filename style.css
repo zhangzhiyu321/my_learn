@@ -14,3 +14,8 @@ body {
 #plot {
     border: 1px solid #ccc;
 }
+
+.selected {
+    stroke: orange;
+    stroke-width: 2px;
+}
