@@ -25,18 +25,10 @@ function drawAxes() {
     yAxisG.call(d3.axisLeft(yScale));
 }
 
-function saveLocal() {
-    // automatic persistence disabled
-}
-
 function pushState() {
     undoStack.push(JSON.stringify(points));
     if (undoStack.length > 100) undoStack.shift();
     redoStack = [];
-}
-
-function loadLocal() {
-    // intentionally left blank
 }
 
 function render() {
@@ -277,7 +269,6 @@ d3.select('#applyRange').on('click', () => {
     render();
 });
 
-d3.select('#drawCurve').on('click', render);
 
 d3.select('#exportData').on('click', () => {
     let content = '# x\ty\n';
