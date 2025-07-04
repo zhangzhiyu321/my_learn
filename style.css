@@ -1,0 +1,27 @@
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+}
+
+#controls {
+    margin-bottom: 10px;
+}
+
+#controls label {
+    margin-right: 10px;
+}
+
+#plot {
+    border: 1px solid #ccc;
+}
+
+.selected {
+    stroke: orange;
+    stroke-width: 2px;
+}
+
+.marquee {
+    fill: rgba(0, 0, 255, 0.1);
+    stroke: blue;
+    stroke-dasharray: 4;
+}
