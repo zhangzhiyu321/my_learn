@@ -382,8 +382,6 @@ document.addEventListener('keydown', e => {
     }
 });
 
-d3.select('#copyPoints').on('click', copySelected);
-d3.select('#pastePoints').on('click', pastePoints);
 d3.select('#rotatePoints').on('click', () => {
     const angle = parseFloat(document.getElementById('rotateAngle').value) || 0;
     rotateSelected(angle);
