@@ -68,7 +68,7 @@ header {
 }
 
 #plotWrapper {
-    flex: 1;
+    flex: none;
     min-width: 300px;
     min-height: 200px;
     width: 800px;
