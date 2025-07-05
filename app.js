@@ -279,6 +279,11 @@ svg.on('mouseup', function(event) {
 svg.on('click', function(event) {
     if (isSelecting || event.target.tagName === 'circle') return;
     if (justSelected) { justSelected = false; return; }
+    if (points.some(p => p.selected)) {
+        points.forEach(p => p.selected = false);
+        render();
+        return;
+    }
     const [mx, my] = d3.pointer(event);
     const x = xScale.invert(mx);
     const y = yScale.invert(my);
