@@ -376,12 +376,16 @@ document.addEventListener('keydown', async e => {
     if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
         deleteSelected();
+        return;
     }
     const step = e.shiftKey ? 0.1 : 0.01;
-    if (e.key === 'ArrowLeft') moveSelected(-step, 0);
-    if (e.key === 'ArrowRight') moveSelected(step, 0);
-    if (e.key === 'ArrowUp') moveSelected(0, step);
-    if (e.key === 'ArrowDown') moveSelected(0, -step);
+    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+        if (points.some(p => p.selected)) e.preventDefault();
+        if (e.key === 'ArrowLeft') moveSelected(-step, 0);
+        if (e.key === 'ArrowRight') moveSelected(step, 0);
+        if (e.key === 'ArrowUp') moveSelected(0, step);
+        if (e.key === 'ArrowDown') moveSelected(0, -step);
+    }
     const mod = e.ctrlKey || e.metaKey;
     if (mod && e.key.toLowerCase() === 'c') { e.preventDefault(); copySelected(); }
     if (mod && e.key.toLowerCase() === 'v') { e.preventDefault(); await pastePoints(); }
