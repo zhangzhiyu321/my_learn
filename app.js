@@ -377,9 +377,10 @@ document.addEventListener('keydown', async e => {
     if (e.key === 'ArrowRight') moveSelected(step, 0);
     if (e.key === 'ArrowUp') moveSelected(0, step);
     if (e.key === 'ArrowDown') moveSelected(0, -step);
-    if (e.ctrlKey && e.key.toLowerCase() === 'c') { e.preventDefault(); copySelected(); }
-    if (e.ctrlKey && e.key.toLowerCase() === 'v') { e.preventDefault(); await pastePoints(); }
-    if (e.ctrlKey && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
-    if (e.ctrlKey && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); }
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && e.key.toLowerCase() === 'c') { e.preventDefault(); copySelected(); }
+    if (mod && e.key.toLowerCase() === 'v') { e.preventDefault(); await pastePoints(); }
+    if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
+    if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); }
 });
 
