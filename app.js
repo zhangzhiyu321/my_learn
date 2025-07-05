@@ -314,9 +314,9 @@ d3.select('#exportData').on('click', () => {
 d3.select('#clearPlot').on('click', () => {
     saveState();
     points = [];
-    svg.selectAll('*').remove();
-    axes.x = svg.append('g').attr('transform', `translate(0,${height - margin.bottom})`);
-    axes.y = svg.append('g').attr('transform', `translate(${margin.left},0)`);
+    svg.selectAll('circle.point').remove();
+    svg.selectAll('path.curve').remove();
+    svg.selectAll('rect.marquee').remove();
     drawAxes();
     render();
     localStorage.setItem('points', JSON.stringify(points));
