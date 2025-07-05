@@ -19,6 +19,26 @@ let selectionRect;
 let justSelected = false;
 let internalClipboard = '';
 
+function updateLine() {
+    if (showLine && points.length > 1) {
+        const line = d3.line()
+            .x(d => xScale(d.x))
+            .y(d => yScale(d.y))
+            .curve(d3.curveMonotoneX);
+        const sorted = points.slice().sort((a, b) => a.x - b.x);
+        svg.selectAll('path.curve')
+            .data([sorted])
+            .join('path')
+            .attr('class', 'curve')
+            .attr('fill', 'none')
+            .attr('stroke', 'red')
+            .attr('stroke-width', 2)
+            .attr('d', line);
+    } else {
+        svg.selectAll('path.curve').remove();
+    }
+}
+
 let xAxisG = svg.append('g').attr('transform', `translate(0,${height - 30})`);
 let yAxisG = svg.append('g').attr('transform', 'translate(40,0)');
 
@@ -47,11 +67,15 @@ function render() {
                 d3.drag()
                     .subject(d => ({ x: xScale(d.x), y: yScale(d.y) }))
                     .on('start', () => { pushState(); })
-                    .on('drag', (event, d) => {
+                    .on('drag', function(event, d) {
                         d.x = xScale.invert(event.x);
                         d.y = yScale.invert(event.y);
-                        render();
+                        d3.select(this)
+                            .attr('cx', xScale(d.x))
+                            .attr('cy', yScale(d.y));
+                        updateLine();
                     })
+                    .on('end', render)
             )
             .on('click', (event, d) => {
                 if (!event.shiftKey) points.forEach(p => p.selected = false);
@@ -59,24 +83,7 @@ function render() {
                 render();
             });
     });
-
-    if (showLine && points.length > 1) {
-        const line = d3.line()
-            .x(d => xScale(d.x))
-            .y(d => yScale(d.y))
-            .curve(d3.curveMonotoneX);
-        const sorted = points.slice().sort((a, b) => a.x - b.x);
-        svg.selectAll('path.curve').remove();
-        svg.append('path')
-            .datum(sorted)
-            .attr('class', 'curve')
-            .attr('fill', 'none')
-            .attr('stroke', 'red')
-            .attr('stroke-width', 2)
-            .attr('d', line);
-    } else {
-        svg.selectAll('path.curve').remove();
-    }
+    updateLine();
 }
 
 function addPoint(x, y) {
