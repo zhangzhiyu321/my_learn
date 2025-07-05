@@ -3,6 +3,15 @@ const width = +svg.attr('width');
 const height = +svg.attr('height');
 const margin = {left: 40, right: 20, top: 20, bottom: 30};
 
+const bgImage = svg.append('image')
+    .attr('id', 'bgImage')
+    .attr('x', 0)
+    .attr('y', 0)
+    .attr('width', width)
+    .attr('height', height)
+    .attr('preserveAspectRatio', 'none')
+    .lower();
+
 let xScale = d3.scaleLinear().domain([0, 10]).range([margin.left, width - margin.right]);
 let yScale = d3.scaleLinear().domain([0, 10]).range([height - margin.bottom, margin.top]);
 
@@ -343,6 +352,21 @@ document.getElementById('importData').addEventListener('change', e => {
         e.target.value = '';
     };
     reader.readAsText(file);
+});
+
+document.getElementById('bgImageInput').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        bgImage.attr('href', ev.target.result);
+        e.target.value = '';
+    };
+    reader.readAsDataURL(file);
+});
+
+d3.select('#clearBg').on('click', () => {
+    bgImage.attr('href', null);
 });
 
 document.addEventListener('keydown', e => {

@@ -16,6 +16,7 @@ This repository contains a lightweight curve editor built with D3.js. It lets yo
 - Sample a segment into evenly spaced points.
 - Undo or redo changes at any time.
 - Toggle the curve display on or off with the **Hide Line** button.
+- Load a background image behind the axes for easier curve fitting.
 - The sidebar scrolls independently when controls exceed the viewport.
 - Reset everything with the **Clear** button.
 

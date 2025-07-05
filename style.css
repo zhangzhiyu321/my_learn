@@ -72,6 +72,11 @@ header {
     background: #fff;
     border: 1px solid #ccc;
     border-radius: 8px;
+    position: relative;
+}
+
+#bgImage {
+    pointer-events: none;
 }
 
 .point {
