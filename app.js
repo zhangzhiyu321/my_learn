@@ -30,7 +30,8 @@ if (saved) {
 const showSaved = localStorage.getItem('showLine');
 if (showSaved !== null) showLine = JSON.parse(showSaved);
 
-document.getElementById('toggleLine').checked = showLine;
+const toggleLineBtn = document.getElementById('toggleLineBtn');
+toggleLineBtn.textContent = showLine ? 'Hide Line' : 'Show Line';
 
 drawAxes();
 render();
@@ -388,9 +389,10 @@ d3.select('#rotatePoints').on('click', () => {
 });
 d3.select('#undo').on('click', undo);
 d3.select('#redo').on('click', redo);
-d3.select('#toggleLine').on('change', e => {
-    showLine = e.target.checked;
+d3.select('#toggleLineBtn').on('click', () => {
+    showLine = !showLine;
     localStorage.setItem('showLine', JSON.stringify(showLine));
+    toggleLineBtn.textContent = showLine ? 'Hide Line' : 'Show Line';
     render();
 });
 d3.select('#sampleSegment').on('click', () => {

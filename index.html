@@ -18,21 +18,22 @@
                 <label>X max <input type="number" id="xmax" value="10" step="any"></label>
                 <label>Y min <input type="number" id="ymin" value="0" step="any"></label>
                 <label>Y max <input type="number" id="ymax" value="10" step="any"></label>
-                <button id="applyRange">Apply Range</button>
+                <button id="applyRange" class="btn">Apply Range</button>
             </div>
-            <button id="exportData">Export .dat</button>
-            <input type="file" id="importData" accept=".dat">
-            <button id="clearPlot">Clear</button>
+            <button id="exportData" class="btn">Export .dat</button>
+            <label for="importData" class="btn">Import .dat</label>
+            <input type="file" id="importData" accept=".dat" class="hidden">
+            <button id="clearPlot" class="btn">Clear</button>
             <div class="rotate">
                 <input type="number" id="rotateAngle" value="90" step="any">
-                <button id="rotatePoints">Rotate</button>
+                <button id="rotatePoints" class="btn">Rotate</button>
             </div>
-            <button id="undo">Undo</button>
-            <button id="redo">Redo</button>
-            <label class="toggle"><input type="checkbox" id="toggleLine" checked> Show Line</label>
+            <button id="undo" class="btn">Undo</button>
+            <button id="redo" class="btn">Redo</button>
+            <button id="toggleLineBtn" class="btn">Hide Line</button>
             <div class="sample">
                 <label>Sample count <input type="number" id="sampleCount" value="10" min="1"></label>
-                <button id="sampleSegment">Sample Segment</button>
+                <button id="sampleSegment" class="btn">Sample Segment</button>
             </div>
         </aside>
         <svg id="plot" width="800" height="500"></svg>

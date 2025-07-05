@@ -46,8 +46,7 @@ header {
     border-radius: 4px;
 }
 
-#panel button,
-#panel input[type=file] {
+#panel .btn {
     width: 100%;
     margin-top: 0.5rem;
     padding: 0.5rem;
@@ -56,11 +55,16 @@ header {
     border-radius: 4px;
     background: #007acc;
     color: #fff;
+    text-align: center;
     cursor: pointer;
 }
 
-#panel button:hover {
+#panel .btn:hover {
     background: #0064b4;
+}
+
+#panel input[type=file].hidden {
+    display: none;
 }
 
 #plot {
@@ -96,8 +100,3 @@ header {
     margin-right: 0.5rem;
 }
 
-.toggle {
-    display: block;
-    margin-top: 0.5rem;
-    font-size: 14px;
-}
