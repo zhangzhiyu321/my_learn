@@ -1,6 +1,9 @@
-const svg = d3.select('#plot');
-const width = +svg.attr('width');
-const height = +svg.attr('height');
+const wrapper = document.getElementById('plotWrapper');
+let width = wrapper.clientWidth;
+let height = wrapper.clientHeight;
+const svg = d3.select('#plot')
+    .attr('width', width)
+    .attr('height', height);
 const margin = {left: 40, right: 20, top: 20, bottom: 30};
 
 const bgImage = svg.append('image')
@@ -28,9 +31,22 @@ let internalClipboard = '';
 let showLine = true;
 
 const axes = {
-    x: svg.append('g').attr('transform', `translate(0,${height - margin.bottom})`),
-    y: svg.append('g').attr('transform', `translate(${margin.left},0)`)
+    x: svg.append('g'),
+    y: svg.append('g')
 };
+
+function updateSize() {
+    width = wrapper.clientWidth;
+    height = wrapper.clientHeight;
+    svg.attr('width', width).attr('height', height);
+    bgImage.attr('width', width).attr('height', height);
+    xScale.range([margin.left, width - margin.right]);
+    yScale.range([height - margin.bottom, margin.top]);
+    axes.x.attr('transform', `translate(0,${height - margin.bottom})`);
+    axes.y.attr('transform', `translate(${margin.left},0)`);
+    drawAxes();
+    render();
+}
 
 const saved = localStorage.getItem('points');
 if (saved) {
@@ -42,9 +58,10 @@ if (showSaved !== null) showLine = JSON.parse(showSaved);
 
 const toggleLineBtn = document.getElementById('toggleLineBtn');
 toggleLineBtn.textContent = showLine ? 'Hide Line' : 'Show Line';
+updateSize();
 
-drawAxes();
-render();
+const resizeObserver = new ResizeObserver(updateSize);
+resizeObserver.observe(wrapper);
 
 function drawAxes() {
     axes.x.call(d3.axisBottom(xScale));
