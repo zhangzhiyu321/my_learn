@@ -360,6 +360,26 @@ document.addEventListener('keydown', e => {
             if (e.key === 'ArrowDown') moveSelected(0, -step);
         }
     }
+
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'c' || e.key === 'C')) {
+        e.preventDefault();
+        copySelected();
+        return;
+    }
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'v' || e.key === 'V')) {
+        e.preventDefault();
+        pastePoints();
+        return;
+    }
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault();
+        undo();
+        return;
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && (e.key === 'Z' || e.key === 'z')))) {
+        e.preventDefault();
+        redo();
+    }
 });
 
 d3.select('#copyPoints').on('click', copySelected);
