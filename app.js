@@ -9,7 +9,8 @@ const bgImage = svg.append('image')
     .attr('y', 0)
     .attr('width', width)
     .attr('height', height)
-    .attr('preserveAspectRatio', 'none')
+    // keep the original aspect ratio of the uploaded image
+    .attr('preserveAspectRatio', 'xMidYMid meet')
     .lower();
 
 let xScale = d3.scaleLinear().domain([0, 10]).range([margin.left, width - margin.right]);
