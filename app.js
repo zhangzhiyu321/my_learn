@@ -2,9 +2,6 @@ const svg = d3.select('#plot');
 const width = +svg.attr('width');
 const height = +svg.attr('height');
 
-// clear any stored data on load so each refresh starts fresh
-localStorage.removeItem('curve_points');
-
 let xScale = d3.scaleLinear().domain([0, 10]).range([40, width - 20]);
 let yScale = d3.scaleLinear().domain([0, 10]).range([height - 30, 20]);
 
@@ -18,6 +15,7 @@ let selectStart = null;
 let selectionRect;
 let justSelected = false;
 let internalClipboard = '';
+let dragState = null;
 
 function updateLine() {
     if (showLine && points.length > 1) {
@@ -33,7 +31,9 @@ function updateLine() {
             .attr('fill', 'none')
             .attr('stroke', 'red')
             .attr('stroke-width', 2)
-            .attr('d', line);
+            .attr('pointer-events', 'none')
+            .attr('d', line)
+            .lower();
     } else {
         svg.selectAll('path.curve').remove();
     }
@@ -59,6 +59,7 @@ function render() {
         svg.append('circle')
             .datum(p)
             .attr('class', 'point' + (p.selected ? ' selected' : ''))
+            .attr('data-id', p.id)
             .attr('cx', xScale(p.x))
             .attr('cy', yScale(p.y))
             .attr('r', 4)
@@ -66,16 +67,35 @@ function render() {
             .call(
                 d3.drag()
                     .subject(d => ({ x: xScale(d.x), y: yScale(d.y) }))
-                    .on('start', () => { pushState(); })
-                    .on('drag', function(event, d) {
-                        d.x = xScale.invert(event.x);
-                        d.y = yScale.invert(event.y);
-                        d3.select(this)
-                            .attr('cx', xScale(d.x))
-                            .attr('cy', yScale(d.y));
+                    .on('start', function(event, d) {
+                        if (event.sourceEvent.shiftKey) { dragState = null; return; }
+                        pushState();
+                        const targets = d.selected ? points.filter(p => p.selected) : [d];
+                        dragState = {
+                            startX: xScale.invert(event.x),
+                            startY: yScale.invert(event.y),
+                            items: targets.map(p => ({ p, x: p.x, y: p.y }))
+                        };
+                    })
+                    .on('drag', function(event) {
+                        if (!dragState) return;
+                        if (event.sourceEvent.shiftKey) return;
+                        const dx = xScale.invert(event.x) - dragState.startX;
+                        const dy = yScale.invert(event.y) - dragState.startY;
+                        dragState.items.forEach(item => {
+                            item.p.x = item.x + dx;
+                            item.p.y = item.y + dy;
+                            svg.select(`circle[data-id='${item.p.id}']`)
+                                .attr('cx', xScale(item.p.x))
+                                .attr('cy', yScale(item.p.y));
+                        });
                         updateLine();
                     })
-                    .on('end', render)
+                    .on('end', function(event) {
+                        if (event.sourceEvent.shiftKey) { dragState = null; return; }
+                        dragState = null;
+                        render();
+                    })
             )
             .on('click', (event, d) => {
                 if (!event.shiftKey) points.forEach(p => p.selected = false);
@@ -215,7 +235,7 @@ drawAxes();
 render();
 
 svg.on('mousedown', function(event) {
-    if (!event.shiftKey || event.target.tagName === 'circle') return;
+    if (!event.shiftKey) return;
     isSelecting = true;
     selectStart = d3.pointer(event);
     selectionRect = svg.append('rect')
