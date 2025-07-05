@@ -81,3 +81,19 @@ header {
     stroke: #007bff;
     stroke-dasharray: 4;
 }
+
+.rotate,
+.sample {
+    margin-top: 0.5rem;
+}
+
+.rotate input {
+    width: 60px;
+    margin-right: 0.5rem;
+}
+
+.toggle {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 14px;
+}

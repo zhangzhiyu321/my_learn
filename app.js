@@ -12,11 +12,25 @@ let dragState = null;
 let marquee = null;
 let marqueeStart = null;
 let justSelected = false;
+let undoStack = [];
+let redoStack = [];
+let internalClipboard = '';
+let showLine = true;
 
 const axes = {
     x: svg.append('g').attr('transform', `translate(0,${height - margin.bottom})`),
     y: svg.append('g').attr('transform', `translate(${margin.left},0)`)
 };
+
+const saved = localStorage.getItem('points');
+if (saved) {
+    points = JSON.parse(saved);
+    nextId = points.reduce((m, p) => Math.max(m, p.id), 0) + 1;
+}
+const showSaved = localStorage.getItem('showLine');
+if (showSaved !== null) showLine = JSON.parse(showSaved);
+
+document.getElementById('toggleLine').checked = showLine;
 
 drawAxes();
 render();
@@ -47,7 +61,7 @@ function render() {
         exit => exit.remove()
     );
 
-    if (points.length > 1) {
+    if (showLine && points.length > 1) {
         const line = d3.line()
             .x(d => xScale(d.x))
             .y(d => yScale(d.y))
@@ -150,18 +164,116 @@ svg.on('click', event => {
 });
 
 function addPoint(x, y) {
+    saveState();
     points.push({ id: nextId++, x, y });
     render();
+    localStorage.setItem('points', JSON.stringify(points));
 }
 
 function deleteSelected() {
+    if (!points.some(p => p.selected)) return;
+    saveState();
     points = points.filter(p => !p.selected);
     render();
+    localStorage.setItem('points', JSON.stringify(points));
 }
 
 function moveSelected(dx, dy) {
+    if (!points.some(p => p.selected)) return;
+    saveState();
     points.forEach(p => { if (p.selected) { p.x += dx; p.y += dy; } });
     render();
+    localStorage.setItem('points', JSON.stringify(points));
+}
+
+function saveState() {
+    undoStack.push(JSON.stringify(points));
+    if (undoStack.length > 50) undoStack.shift();
+    redoStack.length = 0;
+}
+
+function undo() {
+    if (!undoStack.length) return;
+    redoStack.push(JSON.stringify(points));
+    points = JSON.parse(undoStack.pop());
+    nextId = points.reduce((m, p) => Math.max(m, p.id), 0) + 1;
+    render();
+    localStorage.setItem('points', JSON.stringify(points));
+}
+
+function redo() {
+    if (!redoStack.length) return;
+    undoStack.push(JSON.stringify(points));
+    points = JSON.parse(redoStack.pop());
+    nextId = points.reduce((m, p) => Math.max(m, p.id), 0) + 1;
+    render();
+    localStorage.setItem('points', JSON.stringify(points));
+}
+
+function copySelected() {
+    const text = points.filter(p => p.selected)
+        .map(p => `${p.x}\t${p.y}`)
+        .join('\n');
+    if (!text) return;
+    internalClipboard = text;
+    navigator.clipboard.writeText(text).catch(() => {});
+}
+
+function handlePaste(text) {
+    if (!text) return;
+    saveState();
+    text.trim().split(/\r?\n/).forEach(line => {
+        const [x, y] = line.trim().split(/\s+/).map(Number);
+        if (!isNaN(x) && !isNaN(y)) points.push({ id: nextId++, x, y });
+    });
+    render();
+    localStorage.setItem('points', JSON.stringify(points));
+}
+
+function pastePoints() {
+    navigator.clipboard.readText()
+        .then(handlePaste)
+        .catch(() => handlePaste(internalClipboard));
+}
+
+function rotateSelected(angle) {
+    const sel = points.filter(p => p.selected);
+    if (!sel.length) return;
+    saveState();
+    const rad = angle * Math.PI / 180;
+    const cx = sel.reduce((s, p) => s + p.x, 0) / sel.length;
+    const cy = sel.reduce((s, p) => s + p.y, 0) / sel.length;
+    sel.forEach(p => {
+        const dx = p.x - cx;
+        const dy = p.y - cy;
+        p.x = cx + dx * Math.cos(rad) - dy * Math.sin(rad);
+        p.y = cy + dx * Math.sin(rad) + dy * Math.cos(rad);
+    });
+    render();
+    localStorage.setItem('points', JSON.stringify(points));
+}
+
+function sampleSegment(count) {
+    const sel = points.filter(p => p.selected).sort((a,b) => a.x - b.x);
+    const data = sel.length >= 2 ? sel : points.slice().sort((a,b) => a.x - b.x);
+    if (data.length < 2 || count < 1) return;
+    const line = d3.line()
+        .x(d => xScale(d.x))
+        .y(d => yScale(d.y))
+        .curve(d3.curveMonotoneX);
+    const temp = svg.append('path').attr('d', line(data)).node();
+    const len = temp.getTotalLength();
+    const step = len / (count - 1);
+    const newPoints = [];
+    for (let i = 0; i < count; i++) {
+        const pt = temp.getPointAtLength(step * i);
+        newPoints.push({ id: nextId++, x: xScale.invert(pt.x), y: yScale.invert(pt.y) });
+    }
+    temp.remove();
+    saveState();
+    points.push(...newPoints);
+    render();
+    localStorage.setItem('points', JSON.stringify(points));
 }
 
 d3.select('#applyRange').on('click', () => {
@@ -190,12 +302,14 @@ d3.select('#exportData').on('click', () => {
 });
 
 d3.select('#clearPlot').on('click', () => {
+    saveState();
     points = [];
     svg.selectAll('*').remove();
     axes.x = svg.append('g').attr('transform', `translate(0,${height - margin.bottom})`);
     axes.y = svg.append('g').attr('transform', `translate(${margin.left},0)`);
     drawAxes();
     render();
+    localStorage.setItem('points', JSON.stringify(points));
 });
 
 document.getElementById('importData').addEventListener('change', e => {
@@ -203,6 +317,7 @@ document.getElementById('importData').addEventListener('change', e => {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = ev => {
+        saveState();
         points = [];
         const lines = ev.target.result.split(/\r?\n/);
         lines.forEach(line => {
@@ -223,6 +338,7 @@ document.getElementById('importData').addEventListener('change', e => {
         }
         drawAxes();
         render();
+        localStorage.setItem('points', JSON.stringify(points));
         e.target.value = '';
     };
     reader.readAsText(file);
@@ -244,4 +360,22 @@ document.addEventListener('keydown', e => {
             if (e.key === 'ArrowDown') moveSelected(0, -step);
         }
     }
+});
+
+d3.select('#copyPoints').on('click', copySelected);
+d3.select('#pastePoints').on('click', pastePoints);
+d3.select('#rotatePoints').on('click', () => {
+    const angle = parseFloat(document.getElementById('rotateAngle').value) || 0;
+    rotateSelected(angle);
+});
+d3.select('#undo').on('click', undo);
+d3.select('#redo').on('click', redo);
+d3.select('#toggleLine').on('change', e => {
+    showLine = e.target.checked;
+    localStorage.setItem('showLine', JSON.stringify(showLine));
+    render();
+});
+d3.select('#sampleSegment').on('click', () => {
+    const n = parseInt(document.getElementById('sampleCount').value, 10) || 0;
+    sampleSegment(n);
 });

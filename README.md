@@ -11,6 +11,11 @@ This repository contains a lightweight curve editor built with D3.js. It lets yo
 - Nudge selected points with the arrow keys (hold **Shift** for larger steps) without scrolling the page.
 - Click empty space to clear the current selection.
 - Import or export point data as a `.dat` file.
+- Copy and paste selected points with **Ctrl/Command+C** and **Ctrl/Command+V**.
+- Rotate selections by a custom angle.
+- Sample a segment into evenly spaced points.
+- Undo or redo changes at any time.
+- Toggle the curve display on or off.
 - Reset everything with the **Clear** button.
 
-Simply open `index.html` in a modern browser to try it out. All data is kept only in memory, so reloading the page will discard any changes.
+Simply open `index.html` in a modern browser to try it out. Point data is automatically saved to `localStorage` so you can resume where you left off.
