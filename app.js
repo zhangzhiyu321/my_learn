@@ -17,6 +17,7 @@ let isSelecting = false;
 let selectStart = null;
 let selectionRect;
 let justSelected = false;
+let internalClipboard = '';
 
 let xAxisG = svg.append('g').attr('transform', `translate(0,${height - 30})`);
 let yAxisG = svg.append('g').attr('transform', 'translate(40,0)');
@@ -103,6 +104,37 @@ function moveSelected(dx, dy) {
         });
         render();
     }
+}
+
+function copySelected() {
+    const selected = points.filter(p => p.selected);
+    if (!selected.length) return;
+    const text = selected.map(p => `${p.x}\t${p.y}`).join('\n');
+    internalClipboard = text;
+    navigator.clipboard.writeText(text).catch(() => {});
+}
+
+async function pastePoints() {
+    let text = '';
+    try {
+        text = await navigator.clipboard.readText();
+    } catch (err) {
+        text = internalClipboard;
+    }
+    if (!text) return;
+    const lines = text.split(/\r?\n/);
+    pushState();
+    lines.forEach(line => {
+        line = line.trim();
+        if (!line) return;
+        const parts = line.split(/\s+/);
+        if (parts.length >= 2) {
+            const x = parseFloat(parts[0]);
+            const y = parseFloat(parts[1]);
+            if (!isNaN(x) && !isNaN(y)) points.push({id: nextId++, x, y});
+        }
+    });
+    render();
 }
 
 
@@ -308,7 +340,7 @@ d3.select('#undoBtn').on('click', undo);
 
 d3.select('#redoBtn').on('click', redo);
 
-document.addEventListener('keydown', e => {
+document.addEventListener('keydown', async e => {
     if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
         deleteSelected();
@@ -318,6 +350,8 @@ document.addEventListener('keydown', e => {
     if (e.key === 'ArrowRight') moveSelected(step, 0);
     if (e.key === 'ArrowUp') moveSelected(0, step);
     if (e.key === 'ArrowDown') moveSelected(0, -step);
+    if (e.ctrlKey && e.key.toLowerCase() === 'c') { e.preventDefault(); copySelected(); }
+    if (e.ctrlKey && e.key.toLowerCase() === 'v') { e.preventDefault(); await pastePoints(); }
     if (e.ctrlKey && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
     if (e.ctrlKey && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); }
 });
