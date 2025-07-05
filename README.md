@@ -1,7 +1,16 @@
-# my_learn
+# Curve Editor Demo
 
-This project provides a minimal curve editor implemented with D3.js. You can set the axis range, add points with a click and drag them to new positions. Hold Shift and drag to draw a selection box for multiple points. Press Delete to remove the selection or use the arrow keys (add Shift for larger steps) to nudge points without scrolling the page. Clicking empty space clears the current selection.
+This repository contains a lightweight curve editor built with D3.js. It lets you interactively create and adjust a set of points and export them in a simple `.dat` format.
 
-Use the **Export .dat** button to save your points or **Import** to load an existing file. The **Clear** button resets the plot. All data is discarded when you reload the page.
+## Features
 
-Open `index.html` in a browser to try the demo.
+- Set custom axis ranges.
+- Click the plot to add points and drag them to new positions.
+- Hold **Shift** and drag to draw a selection rectangle for multiple points.
+- Use the **Delete** key to remove selected points.
+- Nudge selected points with the arrow keys (hold **Shift** for larger steps) without scrolling the page.
+- Click empty space to clear the current selection.
+- Import or export point data as a `.dat` file.
+- Reset everything with the **Clear** button.
+
+Simply open `index.html` in a modern browser to try it out. All data is kept only in memory, so reloading the page will discard any changes.

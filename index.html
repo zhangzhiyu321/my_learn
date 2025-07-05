@@ -2,26 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Curve Drawer</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Curve Editor</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
-    <h1>Curve Editor</h1>
-    <div id="container">
-        <div id="controls">
-            <label>X min: <input type="number" id="xmin" value="0" step="any"></label>
-            <label>X max: <input type="number" id="xmax" value="10" step="any"></label>
-            <label>Y min: <input type="number" id="ymin" value="0" step="any"></label>
-            <label>Y max: <input type="number" id="ymax" value="10" step="any"></label>
-            <button id="applyRange">Apply Range</button>
+    <header>
+        <h1>Curve Editor</h1>
+    </header>
+    <main id="editor">
+        <aside id="panel">
+            <div class="range">
+                <label>X min <input type="number" id="xmin" value="0" step="any"></label>
+                <label>X max <input type="number" id="xmax" value="10" step="any"></label>
+                <label>Y min <input type="number" id="ymin" value="0" step="any"></label>
+                <label>Y max <input type="number" id="ymax" value="10" step="any"></label>
+                <button id="applyRange">Apply Range</button>
+            </div>
             <button id="exportData">Export .dat</button>
-            <button id="clearPlot">Clear</button>
             <input type="file" id="importData" accept=".dat">
-        </div>
+            <button id="clearPlot">Clear</button>
+        </aside>
         <svg id="plot" width="800" height="500"></svg>
-    </div>
+    </main>
 
     <script src="app.js"></script>
 </body>
