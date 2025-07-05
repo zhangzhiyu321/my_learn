@@ -7,18 +7,15 @@ let yScale = d3.scaleLinear().domain([0, 10]).range([height - 30, 20]);
 
 let points = [];
 let nextId = 1;
-let undoStack = [];
-let redoStack = [];
-let showLine = true;
+
 let isSelecting = false;
 let selectStart = null;
 let selectionRect;
 let justSelected = false;
-let internalClipboard = '';
 let dragState = null;
 
 function updateLine() {
-    if (showLine && points.length > 1) {
+    if (points.length > 1) {
         const line = d3.line()
             .x(d => xScale(d.x))
             .y(d => yScale(d.y))
@@ -47,11 +44,6 @@ function drawAxes() {
     yAxisG.call(d3.axisLeft(yScale));
 }
 
-function pushState() {
-    undoStack.push(JSON.stringify(points));
-    if (undoStack.length > 100) undoStack.shift();
-    redoStack = [];
-}
 
 function render() {
     svg.selectAll('circle.point').remove();
@@ -69,7 +61,6 @@ function render() {
                     .subject(d => ({ x: xScale(d.x), y: yScale(d.y) }))
                     .on('start', function(event, d) {
                         if (event.sourceEvent.shiftKey) { dragState = null; return; }
-                        pushState();
                         const targets = d.selected ? points.filter(p => p.selected) : [d];
                         dragState = {
                             startX: xScale.invert(event.x),
@@ -107,14 +98,12 @@ function render() {
 }
 
 function addPoint(x, y) {
-    pushState();
     points.push({id: nextId++, x, y});
     render();
 }
 
 function deleteSelected() {
     if (points.some(p => p.selected)) {
-        pushState();
         points = points.filter(p => !p.selected);
         render();
     }
@@ -122,7 +111,6 @@ function deleteSelected() {
 
 function moveSelected(dx, dy) {
     if (points.some(p => p.selected)) {
-        pushState();
         points.forEach(p => {
             if (p.selected) {
                 p.x += dx;
@@ -133,103 +121,10 @@ function moveSelected(dx, dy) {
     }
 }
 
-function copySelected() {
-    const selected = points.filter(p => p.selected);
-    if (!selected.length) return;
-    const text = selected.map(p => `${p.x}\t${p.y}`).join('\n');
-    internalClipboard = text;
-    navigator.clipboard.writeText(text).catch(() => {});
-}
-
-async function pastePoints() {
-    let text = '';
-    try {
-        text = await navigator.clipboard.readText();
-    } catch (err) {
-        text = internalClipboard;
-    }
-    if (!text) return;
-    const lines = text.split(/\r?\n/);
-    pushState();
-    lines.forEach(line => {
-        line = line.trim();
-        if (!line) return;
-        const parts = line.split(/\s+/);
-        if (parts.length >= 2) {
-            const x = parseFloat(parts[0]);
-            const y = parseFloat(parts[1]);
-            if (!isNaN(x) && !isNaN(y)) points.push({id: nextId++, x, y});
-        }
-    });
-    render();
-}
 
 
-function rotateSelected() {
-    const selected = points.filter(p => p.selected);
-    if (!selected.length) return;
-    const angleDeg = parseFloat(prompt('Rotate angle (deg)', '0')) || 0;
-    const angle = angleDeg * Math.PI / 180;
-    const cx = d3.mean(selected, d => d.x);
-    const cy = d3.mean(selected, d => d.y);
-    pushState();
-    selected.forEach(p => {
-        const dx = p.x - cx;
-        const dy = p.y - cy;
-        p.x = cx + dx * Math.cos(angle) - dy * Math.sin(angle);
-        p.y = cy + dx * Math.sin(angle) + dy * Math.cos(angle);
-    });
-    render();
-}
 
-function sampleSegment() {
-    let selected = points.filter(p => p.selected);
-    if (selected.length < 2) {
-        if (points.length < 2) {
-            alert('Need at least two points to sample');
-            return;
-        }
-        // fallback: use all points when not enough are selected
-        selected = points.slice();
-    }
-    const count = parseInt(document.getElementById('sampleNum').value, 10);
-    if (!count || count <= 0) return;
 
-    const sorted = selected.slice().sort((a, b) => a.x - b.x);
-    const line = d3.line()
-        .x(d => xScale(d.x))
-        .y(d => yScale(d.y))
-        .curve(d3.curveMonotoneX);
-
-    const pathData = line(sorted);
-    const tempPath = svg.append('path').attr('d', pathData).attr('fill', 'none').attr('stroke', 'none');
-    const pathNode = tempPath.node();
-    const total = pathNode.getTotalLength();
-
-    pushState();
-    for (let i = 1; i <= count; i++) {
-        const pos = pathNode.getPointAtLength((i / (count + 1)) * total);
-        const x = xScale.invert(pos.x);
-        const y = yScale.invert(pos.y);
-        points.push({ id: nextId++, x, y });
-    }
-    tempPath.remove();
-    render();
-}
-
-function undo() {
-    if (undoStack.length === 0) return;
-    redoStack.push(JSON.stringify(points));
-    points = JSON.parse(undoStack.pop());
-    render();
-}
-
-function redo() {
-    if (redoStack.length === 0) return;
-    undoStack.push(JSON.stringify(points));
-    points = JSON.parse(redoStack.pop());
-    render();
-}
 
 drawAxes();
 render();
@@ -317,7 +212,6 @@ d3.select('#exportData').on('click', () => {
 });
 
 d3.select('#clearPlot').on('click', () => {
-    pushState();
     points = [];
     svg.selectAll('circle.point').remove();
     svg.selectAll('path.curve').remove();
@@ -332,7 +226,6 @@ document.getElementById('importData').addEventListener('change', event => {
     reader.onload = e => {
         const text = e.target.result;
         const lines = text.split(/\r?\n/);
-        pushState();
         points = [];
         lines.forEach(line => {
             line = line.trim();
@@ -364,15 +257,8 @@ document.getElementById('importData').addEventListener('change', event => {
 });
 
 
-d3.select('#rotatePoints').on('click', rotateSelected);
-d3.select('#sampleSegment').on('click', sampleSegment);
-d3.select('#toggleLine').on('click', () => { showLine = !showLine; render(); });
 
-d3.select('#undoBtn').on('click', undo);
-
-d3.select('#redoBtn').on('click', redo);
-
-document.addEventListener('keydown', async e => {
+document.addEventListener('keydown', e => {
     if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
         deleteSelected();
@@ -380,16 +266,13 @@ document.addEventListener('keydown', async e => {
     }
     const step = e.shiftKey ? 0.1 : 0.01;
     if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
-        if (points.some(p => p.selected)) e.preventDefault();
-        if (e.key === 'ArrowLeft') moveSelected(-step, 0);
-        if (e.key === 'ArrowRight') moveSelected(step, 0);
-        if (e.key === 'ArrowUp') moveSelected(0, step);
-        if (e.key === 'ArrowDown') moveSelected(0, -step);
+        if (points.some(p => p.selected)) {
+            e.preventDefault();
+            if (e.key === 'ArrowLeft') moveSelected(-step, 0);
+            if (e.key === 'ArrowRight') moveSelected(step, 0);
+            if (e.key === 'ArrowUp') moveSelected(0, step);
+            if (e.key === 'ArrowDown') moveSelected(0, -step);
+        }
     }
-    const mod = e.ctrlKey || e.metaKey;
-    if (mod && e.key.toLowerCase() === 'c') { e.preventDefault(); copySelected(); }
-    if (mod && e.key.toLowerCase() === 'v') { e.preventDefault(); await pastePoints(); }
-    if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
-    if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); }
 });
 
