@@ -8,23 +8,26 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
-    <div id="controls">
-        <label>X min: <input type="number" id="xmin" value="0" step="any"></label>
-        <label>X max: <input type="number" id="xmax" value="10" step="any"></label>
-        <label>Y min: <input type="number" id="ymin" value="0" step="any"></label>
-        <label>Y max: <input type="number" id="ymax" value="10" step="any"></label>
-        <button id="applyRange">Apply Range</button>
-        <button id="rotatePoints">Rotate</button>
-        <label>Sample <input type="number" id="sampleNum" value="5" min="1" style="width:60px"></label>
-        <button id="sampleSegment">Sample Segment</button>
-        <button id="toggleLine">Toggle Line</button>
-        <button id="exportData">Export .dat</button>
-        <button id="clearPlot">Clear</button>
-        <input type="file" id="importData" accept=".dat">
-        <button id="undoBtn">Undo</button>
-        <button id="redoBtn">Redo</button>
+    <h1>Curve Editor</h1>
+    <div id="container">
+        <div id="controls">
+            <label>X min: <input type="number" id="xmin" value="0" step="any"></label>
+            <label>X max: <input type="number" id="xmax" value="10" step="any"></label>
+            <label>Y min: <input type="number" id="ymin" value="0" step="any"></label>
+            <label>Y max: <input type="number" id="ymax" value="10" step="any"></label>
+            <button id="applyRange">Apply Range</button>
+            <button id="rotatePoints">Rotate</button>
+            <label>Sample <input type="number" id="sampleNum" value="5" min="1" style="width:60px"></label>
+            <button id="sampleSegment">Sample Segment</button>
+            <button id="toggleLine">Toggle Line</button>
+            <button id="exportData">Export .dat</button>
+            <button id="clearPlot">Clear</button>
+            <input type="file" id="importData" accept=".dat">
+            <button id="undoBtn">Undo</button>
+            <button id="redoBtn">Redo</button>
+        </div>
+        <svg id="plot" width="800" height="500"></svg>
     </div>
-    <svg id="plot" width="600" height="400"></svg>
 
     <script src="app.js"></script>
 </body>
